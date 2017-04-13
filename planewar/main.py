@@ -93,7 +93,11 @@ def main():
     # 游戏等级
     level = 1
 
-
+    # 全屏炸弹
+    bomb_num = 3
+    bomb_image = pygame.image.load("images/bomb.png").convert_alpha()
+    bomb_rect = bomb_image.get_rect()
+    bomb_font = pygame.font.Font("font/font.ttf", 40)
 
     # 切换飞机图片
     switch_image = True
@@ -152,37 +156,47 @@ def main():
                         pause_image = resume_nor_image
                     else:
                         pause_image = pause_nor_image
-        #增加游戏难度，播放升级音乐，增加小中大型敌机的数量和速度
-        #根据用户的得分增加难度
+
+            elif event.type == KEYDOWN:
+                if event.key == K_SPACE:
+                    # 引爆全屏炸弹（前提是bomb_num >０）
+                    if bomb_num:
+                        bomb_num -= 1
+                        for each in enemies:
+                            if each.rect.bottom > 0:
+                                each.active = False
+
+        # 增加游戏难度，播放升级音乐，增加小中大型敌机的数量和速度
+        # 根据用户的得分增加难度
         if level == 1 and score > 50000:
             level = 2
             upgrade_sound.play()
-            #增加3架小型敌机、2架中型敌机、1架大型敌机
+            # 增加3架小型敌机、2架中型敌机、1架大型敌机
             add_small_enemies(small_enemies, enemies, 3)
             add_mid_enemies(mid_enemies, enemies, 2)
             add_big_enemies(big_enemies, enemies, 1)
 
-            #提升小型敌机的速度
+            # 提升小型敌机的速度
             inc_speed(small_enemies, 1)
 
         elif level == 2 and score > 80000:
             level = 3
             upgrade_sound.play()
-            #增加5架小型敌机、3架中型敌机、2架大型敌机
+            # 增加5架小型敌机、3架中型敌机、2架大型敌机
             add_small_enemies(small_enemies, enemies, 5)
             add_mid_enemies(mid_enemies, enemies, 3)
             add_big_enemies(big_enemies, enemies, 2)
-            #提升中型敌机的速度
+            # 提升中型敌机的速度
             inc_speed(mid_enemies, 1)
 
         elif level == 3 and score > 100000:
             level = 4
             upgrade_sound.play()
-            #增加5架小型敌机、3架中型敌机、2架大型敌机
+            # 增加5架小型敌机、3架中型敌机、2架大型敌机
             add_small_enemies(small_enemies, enemies, 5)
             add_mid_enemies(mid_enemies, enemies, 3)
             add_big_enemies(big_enemies, enemies, 2)
-            #提升中型敌机的速度
+            # 提升中型敌机的速度
             inc_speed(mid_enemies, 1)
 
         elif level == 4 and score > 1800000:
@@ -195,7 +209,6 @@ def main():
             # 提升小、中型敌机的速度
             inc_speed(small_enemies, 1)
             inc_speed(mid_enemies, 1)
-
 
         # 检测用户的键盘操作
         key_pressed = pygame.key.get_pressed()
@@ -356,6 +369,14 @@ def main():
                         if enemy3_destroy_index == 0:
                             score += 10000
                             each.reset()
+
+
+            # 绘制全屏炸弹的数量
+            bomb_text = bomb_font.render("* %d" % bomb_num, False, WHITE)
+            text_rect = bomb_text.get_rect()
+            screen.blit(bomb_image, (10, height - 10 - bomb_rect.height))
+            screen.blit(bomb_text, (20 + bomb_rect.width, height - 5 - text_rect.height))
+
 
         # 绘制暂停按钮
         screen.blit(pause_image, paused_rect)
