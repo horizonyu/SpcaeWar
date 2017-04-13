@@ -9,7 +9,7 @@ class Bullet1(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = position
         self.active = True
-        self.speed = 10
+        self.speed = 15
         self.mask = pygame.sprite.from_surface(self.image)
 
     def move(self):

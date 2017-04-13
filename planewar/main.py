@@ -15,14 +15,12 @@ pygame.display.set_caption("飞机大战")
 
 background = pygame.image.load("images/background.png").convert()
 
-#颜色
+# 颜色
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
-
-
 
 # 加载音乐
 pygame.mixer.music.load("sound/game_music.ogg")
@@ -69,6 +67,11 @@ def add_big_enemies(big_enemies, enemies, num):
         enemies.add(big_enemy)
 
 
+def inc_speed(target, inc):
+    for each in target:
+        each.speed += inc
+
+
 def main():
     pygame.mixer.music.play(-1)  # 播放音乐
     clock = pygame.time.Clock()
@@ -77,7 +80,7 @@ def main():
     score = 0
     score_font = pygame.font.Font("font/font.ttf", 30)
 
-    #暂停
+    # 暂停
     paused = False
     pause_nor_image = pygame.image.load("images/pause_nor.png").convert_alpha()
     pause_pressed_image = pygame.image.load("images/pause_pressed.png").convert_alpha()
@@ -86,6 +89,10 @@ def main():
     paused_rect = pause_nor_image.get_rect()
     paused_rect.left, paused_rect.top = width - paused_rect.width - 10, 10
     pause_image = pause_nor_image
+
+    # 游戏等级
+    level = 1
+
 
 
     # 切换飞机图片
@@ -96,7 +103,7 @@ def main():
     # 生成我方飞机
     me = myplane.MyPlane(size)
 
-    #生成子弹
+    # 生成子弹
     bullets1 = []
     BULLET1_NUM = 5
     bullet_index = 0
@@ -116,7 +123,7 @@ def main():
     big_enemies = pygame.sprite.Group()
     add_big_enemies(big_enemies, enemies, 2)
 
-    #毁灭飞机的索引
+    # 毁灭飞机的索引
     me_destroy_index = 0
     enemy1_destroy_index = 0
     enemy2_destroy_index = 0
@@ -145,6 +152,50 @@ def main():
                         pause_image = resume_nor_image
                     else:
                         pause_image = pause_nor_image
+        #增加游戏难度，播放升级音乐，增加小中大型敌机的数量和速度
+        #根据用户的得分增加难度
+        if level == 1 and score > 50000:
+            level = 2
+            upgrade_sound.play()
+            #增加3架小型敌机、2架中型敌机、1架大型敌机
+            add_small_enemies(small_enemies, enemies, 3)
+            add_mid_enemies(mid_enemies, enemies, 2)
+            add_big_enemies(big_enemies, enemies, 1)
+
+            #提升小型敌机的速度
+            inc_speed(small_enemies, 1)
+
+        elif level == 2 and score > 80000:
+            level = 3
+            upgrade_sound.play()
+            #增加5架小型敌机、3架中型敌机、2架大型敌机
+            add_small_enemies(small_enemies, enemies, 5)
+            add_mid_enemies(mid_enemies, enemies, 3)
+            add_big_enemies(big_enemies, enemies, 2)
+            #提升中型敌机的速度
+            inc_speed(mid_enemies, 1)
+
+        elif level == 3 and score > 100000:
+            level = 4
+            upgrade_sound.play()
+            #增加5架小型敌机、3架中型敌机、2架大型敌机
+            add_small_enemies(small_enemies, enemies, 5)
+            add_mid_enemies(mid_enemies, enemies, 3)
+            add_big_enemies(big_enemies, enemies, 2)
+            #提升中型敌机的速度
+            inc_speed(mid_enemies, 1)
+
+        elif level == 4 and score > 1800000:
+            level = 5
+            upgrade_sound.play()
+            # 增加5架小型敌机、3架中型敌机、2架大型敌机
+            add_small_enemies(small_enemies, enemies, 5)
+            add_mid_enemies(mid_enemies, enemies, 3)
+            add_big_enemies(big_enemies, enemies, 2)
+            # 提升小、中型敌机的速度
+            inc_speed(small_enemies, 1)
+            inc_speed(mid_enemies, 1)
+
 
         # 检测用户的键盘操作
         key_pressed = pygame.key.get_pressed()
@@ -159,13 +210,13 @@ def main():
 
         screen.blit(background, (0, 0))  # 布置背景
 
-        #发射子弹
-        if not(delay % 10):
+        # 发射子弹
+        if not (delay % 10):
             bullet_down.play()
             bullets1[bullet_index].reset(me.rect.midtop)
             bullet_index = (bullet_index + 1) % BULLET1_NUM
 
-        #检测子弹是否击中敌机
+        # 检测子弹是否击中敌机
         for b in bullets1:
             if b.active:
                 b.move()
@@ -182,7 +233,6 @@ def main():
                         else:
                             e.active = False
 
-
         # 如果我方飞机是否和敌机发生碰撞，则修改飞机的生命状态为False
         enemies_down = pygame.sprite.spritecollide(me, enemies, False, pygame.sprite.collide_mask)
         if enemies_down:
@@ -190,7 +240,7 @@ def main():
             for e in enemies_down:
                 e.active = False
 
-        #程序正常运行
+        # 程序正常运行
         if not paused:
             # 绘制我方飞机
             if me.active:
@@ -199,8 +249,8 @@ def main():
                 else:
                     screen.blit(me.image2, me.rect)
             else:
-                #毁灭
-                if not(delay % 3):
+                # 毁灭
+                if not (delay % 3):
                     if me_destroy_index == 0:
                         my_down.play()
                     screen.blit(me.destroy_images[me_destroy_index], me.rect)
@@ -208,10 +258,9 @@ def main():
                     if me_destroy_index == 0:
                         me.reset()
 
-            #绘制得分
+            # 绘制得分
             score_text = score_font.render("Score: %s" % str(score), True, WHITE)
-            screen.blit(score_text, (10,5))
-
+            screen.blit(score_text, (10, 5))
 
             # 起到延时的功能，使图片的切换更加自然
             if not (delay % 5):
@@ -226,9 +275,9 @@ def main():
                     each.move()
                     screen.blit(each.image, each.rect)
                 else:
-                    #毁灭
+                    # 毁灭
 
-                    if not(delay % 3):
+                    if not (delay % 3):
                         if enemy1_destroy_index == 0:
                             enemy1_down.play()
                         screen.blit(each.destroy_images[enemy1_destroy_index], each.rect)
@@ -237,21 +286,21 @@ def main():
                             score += 1000
                             each.reset()
 
-            #绘制敌方中型飞机
+            # 绘制敌方中型飞机
             for each in mid_enemies:
                 if each.active:
                     each.move()
 
-                    #如果被子弹击中，则绘制被击中的图片
+                    # 如果被子弹击中，则绘制被击中的图片
                     if each.hit:
                         screen.blit(each.image_hit, each.rect)
                         each.hit = False
                     else:
                         screen.blit(each.image, each.rect)
 
-                    #绘制血槽
-                    pygame.draw.line(screen, BLACK, (each.rect.left, each.rect.top -5),\
-                                                    (each.rect.right, each.rect.top - 5), 2)
+                    # 绘制血槽
+                    pygame.draw.line(screen, BLACK, (each.rect.left, each.rect.top - 5), \
+                                     (each.rect.right, each.rect.top - 5), 2)
                     energy_remain = each.energy / enemy.MidEnemy.energy
                     if energy_remain > 0.2:
                         energy_color = GREEN
@@ -259,11 +308,11 @@ def main():
                         energy_color = RED
 
                     pygame.draw.line(screen, energy_color, (each.rect.left, each.rect.top - 5), \
-                                         (each.rect.left + each.rect.width * energy_remain, each.rect.top - 5), 2)
+                                     (each.rect.left + each.rect.width * energy_remain, each.rect.top - 5), 2)
 
                 else:
-                    #毁灭
-                    if not(delay % 3):
+                    # 毁灭
+                    if not (delay % 3):
                         if enemy2_destroy_index == 0:
                             enemy2_down.play()
                         screen.blit(each.destroy_images[enemy2_destroy_index], each.rect)
@@ -272,11 +321,11 @@ def main():
                             score += 6000
                             each.reset()
 
-            #绘制敌方大型飞机
+            # 绘制敌方大型飞机
             for each in big_enemies:
                 if each.active:
                     each.move()
-                    #如果敌机被子弹击中，则绘制被子弹击中的图片，五毛特效
+                    # 如果敌机被子弹击中，则绘制被子弹击中的图片，五毛特效
                     if each.hit:
                         screen.blit(each.image_hit, each.rect)
                         each.hit = False
@@ -288,18 +337,18 @@ def main():
 
                     # 绘制血槽
                     pygame.draw.line(screen, BLACK, (each.rect.left, each.rect.top - 5), \
-                                         (each.rect.right, each.rect.top - 5), 2)
+                                     (each.rect.right, each.rect.top - 5), 2)
                     energy_remain = each.energy / enemy.BigEnemy.energy
                     if energy_remain > 0.2:
                         energy_color = GREEN
                     else:
                         energy_color = RED
                     pygame.draw.line(screen, energy_color, (each.rect.left, each.rect.top - 5), \
-                                         (each.rect.left + each.rect.width * energy_remain, each.rect.top - 5), 2)
+                                     (each.rect.left + each.rect.width * energy_remain, each.rect.top - 5), 2)
 
                 else:
-                    #毁灭
-                    if not(delay % 3):
+                    # 毁灭
+                    if not (delay % 3):
                         if enemy3_destroy_index == 0:
                             enemy3_down.play()
                         screen.blit(each.destroy_images[enemy3_destroy_index], each.rect)
@@ -308,9 +357,8 @@ def main():
                             score += 10000
                             each.reset()
 
-        #绘制暂停按钮
+        # 绘制暂停按钮
         screen.blit(pause_image, paused_rect)
-
 
         pygame.display.flip()
         clock.tick(60)
