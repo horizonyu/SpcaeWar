@@ -4,7 +4,9 @@ import pygame
 import myplane
 import enemy
 import bullet
+import supply
 from pygame.locals import *
+from random import *
 
 pygame.init()
 pygame.mixer.init()
@@ -44,7 +46,10 @@ upgrade_sound = pygame.mixer.Sound("sound/upgrade.wav")
 upgrade_sound.set_volume(0.4)
 supply_sound = pygame.mixer.Sound("sound/supply.wav")
 supply_sound.set_volume(0.4)
-
+get_bomb_sound = pygame.mixer.Sound("sound/get_bomb.wav")
+get_bomb_sound.set_volume(0.4)
+get_bullet_sound = pygame.mixer.Sound("sound/get_bullet.wav")
+get_bullet_sound.set_volume(0.4)
 
 def add_small_enemies(small_enemies, enemies, num):
     for i in range(num):
@@ -99,6 +104,16 @@ def main():
     bomb_rect = bomb_image.get_rect()
     bomb_font = pygame.font.Font("font/font.ttf", 40)
 
+    # 补给,每30秒发送一个补给包（超级子弹或者是炸弹）
+    bomb_supply = supply.BombSupply(size)
+    bullet_supply = supply.BulletSupply(size)
+    SUPPLY_TIME = USEREVENT                                 #自定义事件
+    pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)           #设置30秒之后触发事件
+
+    #设置超级子弹的有效时长
+    BULLET_TIME = USEREVENT + 1
+    is_double_bullet = False
+
     # 切换飞机图片
     switch_image = True
     # 延时变量，并且也保证了不会影响游戏的正常运行
@@ -113,6 +128,14 @@ def main():
     bullet_index = 0
     for i in range(BULLET1_NUM):
         bullets1.append(bullet.Bullet1(me.rect.midtop))
+
+    #生成超级子弹
+    bullets2 = []
+    BULLET2_NUM = 8
+    bullet2_index = 0
+    for i in range(BULLET2_NUM // 2):
+        bullets2.append(bullet.Bullet2((me.rect.centerx - 33, me.rect.centery)))
+        bullets2.append(bullet.Bullet2((me.rect.centerx + 30, me.rect.centery)))
 
     enemies = pygame.sprite.Group()
     # 生成敌方小型飞机
@@ -143,6 +166,16 @@ def main():
             elif event.type == MOUSEBUTTONDOWN:
                 if event.button == 1 and paused_rect.collidepoint(event.pos):
                     paused = not paused
+                    if paused:
+                        pygame.mixer.music.pause()
+                        pygame.mixer.pause()
+                        pygame.time.set_timer(SUPPLY_TIME, 0)
+                    else:
+                        pygame.mixer.music.unpause()
+                        pygame.mixer.unpause()
+                        pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)
+
+
 
 
             elif event.type == MOUSEMOTION:
@@ -165,6 +198,18 @@ def main():
                         for each in enemies:
                             if each.rect.bottom > 0:
                                 each.active = False
+
+            elif event.type == SUPPLY_TIME:
+                supply_sound.play()                     #在补给出现之前开启声音，提示玩家准备接受
+                if choice([True, False]):
+                    bomb_supply.reset()
+                else:
+                    bullet_supply.reset()
+
+            elif event.type == BULLET_TIME:
+                pygame.time.set_timer(BULLET_TIME, 0)
+                is_double_bullet = False
+
 
         # 增加游戏难度，播放升级音乐，增加小中大型敌机的数量和速度
         # 根据用户的得分增加难度
@@ -225,12 +270,22 @@ def main():
 
         # 发射子弹
         if not (delay % 10):
-            bullet_down.play()
-            bullets1[bullet_index].reset(me.rect.midtop)
-            bullet_index = (bullet_index + 1) % BULLET1_NUM
+
+            #首先判断是否是超级子弹
+            if is_double_bullet:
+                bullet_down.play()
+                bullets = bullets2
+                bullets[bullet2_index].reset((me.rect.centerx - 33, me.rect.centery))
+                bullets[bullet2_index + 1].reset((me.rect.centerx + 30, me.rect.centery))
+                bullet2_index = (bullet2_index + 2) % BULLET2_NUM
+            else:
+                bullet_down.play()
+                bullets = bullets1
+                bullets[bullet_index].reset(me.rect.midtop)
+                bullet_index = (bullet_index + 1) % BULLET1_NUM
 
         # 检测子弹是否击中敌机
-        for b in bullets1:
+        for b in bullets:
             if b.active:
                 b.move()
                 screen.blit(b.image, b.rect)
@@ -255,6 +310,37 @@ def main():
 
         # 程序正常运行
         if not paused:
+            # #如果是由暂停恢复，则重新开始播放音乐
+            # pygame.mixer.music.unpause()
+            # pygame.mixer.unpause()
+
+
+            #绘制炸弹，并检测玩家是否已经获得炸弹
+            if bomb_supply.active:
+                bomb_supply.move()
+                screen.blit(bomb_supply.image, bomb_supply.rect)
+                #进行冲突检测，如果发生冲突，则表示玩家获得炸弹
+                if pygame.sprite.collide_mask(me, bomb_supply):
+                    #播放获得炸弹补给的声音
+                    get_bomb_sound.play()
+                    bomb_supply.active = False
+
+                    #炸弹数量加一
+                    if bomb_num < 3:
+                        bomb_num += 1
+
+            #绘制超级子弹补给，并检测玩家是否已经获得
+            if bullet_supply.active:
+                bullet_supply.move()
+                screen.blit(bullet_supply.image, bullet_supply.rect)
+                #是否发生碰撞，如果发生，则表示玩家用的补给
+                if pygame.sprite.collide_mask(me, bullet_supply):
+                    get_bullet_sound.play()
+                    is_double_bullet = True
+                    #设置超级子弹的使用时间18s
+                    pygame.time.set_timer(BULLET_TIME, 18 * 1000)
+                    bullet_supply.active = False
+
             # 绘制我方飞机
             if me.active:
                 if switch_image:
@@ -370,12 +456,14 @@ def main():
                             score += 10000
                             each.reset()
 
-
             # 绘制全屏炸弹的数量
             bomb_text = bomb_font.render("* %d" % bomb_num, False, WHITE)
             text_rect = bomb_text.get_rect()
             screen.blit(bomb_image, (10, height - 10 - bomb_rect.height))
             screen.blit(bomb_text, (20 + bomb_rect.width, height - 5 - text_rect.height))
+
+
+
 
 
         # 绘制暂停按钮
