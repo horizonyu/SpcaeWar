@@ -51,6 +51,7 @@ get_bomb_sound.set_volume(0.4)
 get_bullet_sound = pygame.mixer.Sound("sound/get_bullet.wav")
 get_bullet_sound.set_volume(0.4)
 
+
 def add_small_enemies(small_enemies, enemies, num):
     for i in range(num):
         small_enemy = enemy.SmallEnemy(size)
@@ -107,23 +108,34 @@ def main():
     # 补给,每30秒发送一个补给包（超级子弹或者是炸弹）
     bomb_supply = supply.BombSupply(size)
     bullet_supply = supply.BulletSupply(size)
-    SUPPLY_TIME = USEREVENT                                 #自定义事件
-    pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)           #设置30秒之后触发事件
+    SUPPLY_TIME = USEREVENT  # 自定义事件
+    pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)  # 设置30秒之后触发事件
 
-    #我方飞机的剩余生命数量
+    # 我方飞机的剩余生命数量
     my_life_num = 3
     my_life = pygame.image.load("images/life.png").convert_alpha()
     life_rect = my_life.get_rect()
 
-
-    #设置超级子弹的有效时长
+    # 设置超级子弹的有效时长
     BULLET_TIME = USEREVENT + 1
     is_double_bullet = False
 
-    #设置我放飞机无敌事件
+    # 设置我放飞机无敌事件
     MY_INCINCIBLE = USEREVENT + 2
     # pygame.time.set_timer(MY_INCINCIBLE, 3 * 1000)
 
+
+    # 绘制游戏结束
+    score_text = score_font.render("Score: %s" % str(score), True, WHITE)
+    best_score = 0
+    best_score_text = score_font.render("Best: %s" % best_score, False, WHITE)
+    game_again = pygame.image.load("images/again.png").convert_alpha()
+    again_rect = game_again.get_rect()
+    again_rect.left, again_rect.top = (110, height / 2 - 80 + score_text.get_rect().height)
+
+    game_over = pygame.image.load("images/gameover.png").convert_alpha()
+    over_rect = game_over.get_rect()
+    over_rect.left, over_rect.top = (110, height / 2 - 80 + 2 * again_rect.height)
 
     # 切换飞机图片
     switch_image = True
@@ -140,7 +152,7 @@ def main():
     for i in range(BULLET1_NUM):
         bullets1.append(bullet.Bullet1(me.rect.midtop))
 
-    #生成超级子弹
+    # 生成超级子弹
     bullets2 = []
     BULLET2_NUM = 8
     bullet2_index = 0
@@ -186,6 +198,22 @@ def main():
                         pygame.mixer.unpause()
                         pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)
 
+                elif event.button == 1 and again_rect.collidepoint(event.pos):
+                    #重新开始游戏
+                    # pygame.mixer.music.play(-1)
+                    # paused = not paused
+                    # my_life_num = 3
+                    # me.reset()
+                    # mid_enemies.empty()
+                    # big_enemies.empty()
+                    # pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)
+                    main()
+
+
+                elif event.button == 1 and over_rect.collidepoint(event.pos):
+                    pygame.quit()
+                    sys.exit()
+
 
 
 
@@ -201,6 +229,8 @@ def main():
                     else:
                         pause_image = pause_nor_image
 
+
+
             elif event.type == KEYDOWN:
                 if event.key == K_SPACE:
                     # 引爆全屏炸弹（前提是bomb_num >０）
@@ -211,7 +241,7 @@ def main():
                                 each.active = False
 
             elif event.type == SUPPLY_TIME:
-                supply_sound.play()                     #在补给出现之前开启声音，提示玩家准备接受
+                supply_sound.play()  # 在补给出现之前开启声音，提示玩家准备接受
                 if choice([True, False]):
                     bomb_supply.reset()
                 else:
@@ -222,11 +252,9 @@ def main():
                 is_double_bullet = False
 
             elif event.type == MY_INCINCIBLE:
-                #触发事件，设置飞机的无敌状态为假
+                # 触发事件，设置飞机的无敌状态为假
                 me.invincible = False
                 pygame.time.set_timer(MY_INCINCIBLE, 0)
-
-
 
         # 增加游戏难度，播放升级音乐，增加小中大型敌机的数量和速度
         # 根据用户的得分增加难度
@@ -288,7 +316,7 @@ def main():
         # 发射子弹
         if not (delay % 10):
 
-            #首先判断是否是超级子弹
+            # 首先判断是否是超级子弹
             if is_double_bullet:
                 bullet_down.play()
                 bullets = bullets2
@@ -332,29 +360,29 @@ def main():
             # pygame.mixer.unpause()
 
 
-            #绘制炸弹，并检测玩家是否已经获得炸弹
+            # 绘制炸弹，并检测玩家是否已经获得炸弹
             if bomb_supply.active:
                 bomb_supply.move()
                 screen.blit(bomb_supply.image, bomb_supply.rect)
-                #进行冲突检测，如果发生冲突，则表示玩家获得炸弹
+                # 进行冲突检测，如果发生冲突，则表示玩家获得炸弹
                 if pygame.sprite.collide_mask(me, bomb_supply):
-                    #播放获得炸弹补给的声音
+                    # 播放获得炸弹补给的声音
                     get_bomb_sound.play()
                     bomb_supply.active = False
 
-                    #炸弹数量加一
+                    # 炸弹数量加一
                     if bomb_num < 3:
                         bomb_num += 1
 
-            #绘制超级子弹补给，并检测玩家是否已经获得
+            # 绘制超级子弹补给，并检测玩家是否已经获得
             if bullet_supply.active:
                 bullet_supply.move()
                 screen.blit(bullet_supply.image, bullet_supply.rect)
-                #是否发生碰撞，如果发生，则表示玩家用的补给
+                # 是否发生碰撞，如果发生，则表示玩家用的补给
                 if pygame.sprite.collide_mask(me, bullet_supply):
                     get_bullet_sound.play()
                     is_double_bullet = True
-                    #设置超级子弹的使用时间18s
+                    # 设置超级子弹的使用时间18s
                     pygame.time.set_timer(BULLET_TIME, 18 * 1000)
                     bullet_supply.active = False
 
@@ -377,7 +405,7 @@ def main():
                     me_destroy_index = (me_destroy_index + 1) % 4
                     if me_destroy_index == 0:
                         me.reset()
-                        my_life_num -= 1                       #剩余生命数量-1
+                        my_life_num -= 1  # 剩余生命数量-1
                         # 设置我方飞机无敌状态
                         pygame.time.set_timer(MY_INCINCIBLE, 3 * 1000)
 
@@ -385,9 +413,7 @@ def main():
 
             for i in range(my_life_num):
                 screen.blit(my_life, (width - 50 - (i * life_rect.width), \
-                                          height - 10 - life_rect.height))
-
-
+                                      height - 10 - life_rect.height))
 
             # 绘制得分
             score_text = score_font.render("Score: %s" % str(score), True, WHITE)
@@ -486,20 +512,44 @@ def main():
                         enemy3_destroy_index = (enemy3_destroy_index + 1) % 6
                         if enemy3_destroy_index == 0:
                             score += 10000
-                            each.reset()
-
-        elif my_life_num == 0:
-            print("Game Over!")
-
             # 绘制全屏炸弹的数量
             bomb_text = bomb_font.render("* %d" % bomb_num, False, WHITE)
             text_rect = bomb_text.get_rect()
             screen.blit(bomb_image, (10, height - 10 - bomb_rect.height))
             screen.blit(bomb_text, (20 + bomb_rect.width, height - 5 - text_rect.height))
+            each.reset()
 
+        elif my_life_num == 0:
+            # 游戏结束
+            pygame.mixer.music.stop()
+            pygame.mixer.stop()
 
+            # 停止发放补给
+            pygame.time.set_timer(SUPPLY_TIME, 0)
 
+            # 打开记录文件，获取最高分数
+            with open("record.txt", "r") as f:
+                best_score = int(f.read())
 
+            if score > best_score:
+                best_score = score
+                with open("record.txt", "w") as f:
+                    f.write(str(score))
+
+            # 绘制游戏结束画面
+
+            # 1. 绘制最高分
+            best_score_text = score_font.render("Best Score: %s" % best_score, False, WHITE)
+            screen.blit(best_score_text, (10, 10))
+
+            # 2. 绘制用户的得分
+            score_text = score_font.render("Your Score: %s" % score, False, WHITE)
+            screen.blit(score_text, (width / 2 - 100, height / 2 - 100))
+            # 3. 绘制重新开始图片
+            screen.blit(game_again, (110, height / 2 - 80 + score_text.get_rect().height))
+
+            # 4. 绘制游戏结束图片
+            screen.blit(game_over, (110, height / 2 - 80 + 2 * again_rect.height))
 
         # 绘制暂停按钮
         screen.blit(pause_image, paused_rect)
