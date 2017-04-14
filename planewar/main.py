@@ -110,9 +110,20 @@ def main():
     SUPPLY_TIME = USEREVENT                                 #自定义事件
     pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)           #设置30秒之后触发事件
 
+    #我方飞机的剩余生命数量
+    my_life_num = 3
+    my_life = pygame.image.load("images/life.png").convert_alpha()
+    life_rect = my_life.get_rect()
+
+
     #设置超级子弹的有效时长
     BULLET_TIME = USEREVENT + 1
     is_double_bullet = False
+
+    #设置我放飞机无敌事件
+    MY_INCINCIBLE = USEREVENT + 2
+    # pygame.time.set_timer(MY_INCINCIBLE, 3 * 1000)
+
 
     # 切换飞机图片
     switch_image = True
@@ -210,6 +221,12 @@ def main():
                 pygame.time.set_timer(BULLET_TIME, 0)
                 is_double_bullet = False
 
+            elif event.type == MY_INCINCIBLE:
+                #触发事件，设置飞机的无敌状态为假
+                me.invincible = False
+                pygame.time.set_timer(MY_INCINCIBLE, 0)
+
+
 
         # 增加游戏难度，播放升级音乐，增加小中大型敌机的数量和速度
         # 根据用户的得分增加难度
@@ -303,13 +320,13 @@ def main():
 
         # 如果我方飞机是否和敌机发生碰撞，则修改飞机的生命状态为False
         enemies_down = pygame.sprite.spritecollide(me, enemies, False, pygame.sprite.collide_mask)
-        if enemies_down:
+        if enemies_down and not me.invincible:
             me.active = False
             for e in enemies_down:
                 e.active = False
 
         # 程序正常运行
-        if not paused:
+        if not paused and my_life_num:
             # #如果是由暂停恢复，则重新开始播放音乐
             # pygame.mixer.music.unpause()
             # pygame.mixer.unpause()
@@ -347,6 +364,10 @@ def main():
                     screen.blit(me.image1, me.rect)
                 else:
                     screen.blit(me.image2, me.rect)
+
+
+
+
             else:
                 # 毁灭
                 if not (delay % 3):
@@ -356,6 +377,17 @@ def main():
                     me_destroy_index = (me_destroy_index + 1) % 4
                     if me_destroy_index == 0:
                         me.reset()
+                        my_life_num -= 1                       #剩余生命数量-1
+                        # 设置我方飞机无敌状态
+                        pygame.time.set_timer(MY_INCINCIBLE, 3 * 1000)
+
+            # 绘制我方飞机生命
+
+            for i in range(my_life_num):
+                screen.blit(my_life, (width - 50 - (i * life_rect.width), \
+                                          height - 10 - life_rect.height))
+
+
 
             # 绘制得分
             score_text = score_font.render("Score: %s" % str(score), True, WHITE)
@@ -455,6 +487,9 @@ def main():
                         if enemy3_destroy_index == 0:
                             score += 10000
                             each.reset()
+
+        elif my_life_num == 0:
+            print("Game Over!")
 
             # 绘制全屏炸弹的数量
             bomb_text = bomb_font.render("* %d" % bomb_num, False, WHITE)
