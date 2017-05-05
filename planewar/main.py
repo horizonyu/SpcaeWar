@@ -13,7 +13,7 @@ pygame.mixer.init()
 
 size = width, height = 480, 700
 screen = pygame.display.set_mode(size)
-pygame.display.set_caption("飞机大战")
+pygame.display.set_caption("太空大战")
 
 background = pygame.image.load("images/background.png").convert()
 
@@ -353,6 +353,8 @@ def main():
             for e in enemies_down:
                 e.active = False
 
+        # 绘制暂停按钮
+        screen.blit(pause_image, paused_rect)
         # 程序正常运行
         if not paused and my_life_num:
             # #如果是由暂停恢复，则重新开始播放音乐
@@ -508,10 +510,11 @@ def main():
                     if not (delay % 3):
                         if enemy3_destroy_index == 0:
                             enemy3_down.play()
-                        screen.blit(each.destroy_images[enemy3_destroy_index], each.rect)
-                        enemy3_destroy_index = (enemy3_destroy_index + 1) % 6
-                        if enemy3_destroy_index == 0:
+                            screen.blit(each.destroy_images[enemy3_destroy_index], each.rect)
+                            enemy3_destroy_index = (enemy3_destroy_index + 1) % 6
                             score += 10000
+                        # if enemy3_destroy_index == 0:
+                        #     score += 10000
             # 绘制全屏炸弹的数量
             bomb_text = bomb_font.render("* %d" % bomb_num, False, WHITE)
             text_rect = bomb_text.get_rect()
@@ -551,8 +554,7 @@ def main():
             # 4. 绘制游戏结束图片
             screen.blit(game_over, (110, height / 2 - 80 + 2 * again_rect.height))
 
-        # 绘制暂停按钮
-        screen.blit(pause_image, paused_rect)
+
 
         pygame.display.flip()
         clock.tick(60)

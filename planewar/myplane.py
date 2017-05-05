@@ -23,6 +23,7 @@ class MyPlane(pygame.sprite.Sprite):
         self.active = True
         #保证我方战机与敌方战机真正接触时才会发生碰撞事件
         self.mask = pygame.sprite.from_surface(self.image1)
+        #无敌属性
         self.invincible = False
 
     def moveUp(self):
