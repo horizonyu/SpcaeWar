@@ -147,14 +147,14 @@ def main():
 
     # 生成子弹
     bullets1 = []
-    BULLET1_NUM = 5
+    BULLET1_NUM = 10
     bullet_index = 0
     for i in range(BULLET1_NUM):
         bullets1.append(bullet.Bullet1(me.rect.midtop))
 
     # 生成超级子弹
     bullets2 = []
-    BULLET2_NUM = 8
+    BULLET2_NUM = 10
     bullet2_index = 0
     for i in range(BULLET2_NUM // 2):
         bullets2.append(bullet.Bullet2((me.rect.centerx - 33, me.rect.centery)))
@@ -192,10 +192,12 @@ def main():
                     if paused:
                         pygame.mixer.music.pause()
                         pygame.mixer.pause()
+                        #补给计时同样停止
                         pygame.time.set_timer(SUPPLY_TIME, 0)
                     else:
                         pygame.mixer.music.unpause()
                         pygame.mixer.unpause()
+                        #补给计时开始
                         pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)
 
                 elif event.button == 1 and again_rect.collidepoint(event.pos):
@@ -211,6 +213,7 @@ def main():
 
 
                 elif event.button == 1 and over_rect.collidepoint(event.pos):
+                    #退出游戏
                     pygame.quit()
                     sys.exit()
 
@@ -247,10 +250,11 @@ def main():
                 else:
                     bullet_supply.reset()
 
+            #为超级子弹设定时限，到达指定的时间，恢复成普通的子弹
             elif event.type == BULLET_TIME:
                 pygame.time.set_timer(BULLET_TIME, 0)
                 is_double_bullet = False
-
+            #为无敌事件设定时限，到达指定的时间，飞机恢复成普通状态
             elif event.type == MY_INCINCIBLE:
                 # 触发事件，设置飞机的无敌状态为假
                 me.invincible = False
@@ -311,7 +315,8 @@ def main():
         if key_pressed[K_d] or key_pressed[K_RIGHT]:
             me.moveRight()
 
-        screen.blit(background, (0, 0))  # 布置背景
+        # 布置背景
+        screen.blit(background, (0, 0))
 
         # 发射子弹
         if not (delay % 10):
@@ -394,10 +399,6 @@ def main():
                     screen.blit(me.image1, me.rect)
                 else:
                     screen.blit(me.image2, me.rect)
-
-
-
-
             else:
                 # 毁灭
                 if not (delay % 3):
@@ -412,7 +413,6 @@ def main():
                         pygame.time.set_timer(MY_INCINCIBLE, 3 * 1000)
 
             # 绘制我方飞机生命
-
             for i in range(my_life_num):
                 screen.blit(my_life, (width - 50 - (i * life_rect.width), \
                                       height - 10 - life_rect.height))
@@ -435,7 +435,6 @@ def main():
                     screen.blit(each.image, each.rect)
                 else:
                     # 毁灭
-
                     if not (delay % 3):
                         if enemy1_destroy_index == 0:
                             enemy1_down.play()
@@ -510,11 +509,12 @@ def main():
                     if not (delay % 3):
                         if enemy3_destroy_index == 0:
                             enemy3_down.play()
-                            screen.blit(each.destroy_images[enemy3_destroy_index], each.rect)
-                            enemy3_destroy_index = (enemy3_destroy_index + 1) % 6
+                        screen.blit(each.destroy_images[enemy3_destroy_index], each.rect)
+                        enemy3_destroy_index = (enemy3_destroy_index + 1) % 6
+                            # score += 10000
+                        if enemy3_destroy_index == 0:
                             score += 10000
-                        # if enemy3_destroy_index == 0:
-                        #     score += 10000
+                            each.reset()
             # 绘制全屏炸弹的数量
             bomb_text = bomb_font.render("* %d" % bomb_num, False, WHITE)
             text_rect = bomb_text.get_rect()
